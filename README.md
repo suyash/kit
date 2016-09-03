@@ -4,6 +4,10 @@
 in large organizations. We solve common problems in distributed systems, so
 you can focus on your business logic.
 
+This fork adds instrumentation support for [Performance Co-Pilot](http://pcp.io) through its golang client [speed](https://github.com/performancecopilot/speed).
+
+The examples have also been ported to work with the implemented metrics subpackage and are in the [pcp-examples tree](https://github.com/suyash/kit/tree/pcp-examples/examples)
+
 - Website: [gokit.io](https://gokit.io)
 - Mailing list: [go-kit](https://groups.google.com/forum/#!forum/go-kit)
 - Slack: [gophers.slack.com](https://gophers.slack.com) **#go-kit** ([invite](https://gophersinvite.herokuapp.com/))
