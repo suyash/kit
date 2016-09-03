@@ -4,9 +4,9 @@
 
 ![](screenshots/start.png)
 
-## boom! [rakyll/boom](https://github.com/rakyll/boom)
+## hey! [rakyll/hey](https://github.com/rakyll/hey)
 
-![](screenshots/boom.png)
+![](screenshots/hey.png)
 
 ## request.count
 
