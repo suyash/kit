@@ -17,6 +17,10 @@ func instrumentingMiddleware(
 	}
 }
 
+func toMicroSecond(nanoseconds int64) float64 {
+	return float64(nanoseconds) * 1e-3
+}
+
 type instrmw struct {
 	requestCount   metrics.Counter
 	requestLatency metrics.Histogram
@@ -28,7 +32,7 @@ func (mw instrmw) Uppercase(s string) (output string, err error) {
 	defer func(begin time.Time) {
 		lvs := []string{"method", "uppercase", "error", fmt.Sprint(err != nil)}
 		mw.requestCount.With(lvs...).Add(1)
-		mw.requestLatency.With(lvs...).Observe(time.Since(begin).Seconds())
+		mw.requestLatency.With(lvs...).Observe(toMicroSecond(time.Since(begin).Nanoseconds()))
 	}(time.Now())
 
 	output, err = mw.StringService.Uppercase(s)
@@ -39,7 +43,7 @@ func (mw instrmw) Count(s string) (n int) {
 	defer func(begin time.Time) {
 		lvs := []string{"method", "count", "error", "false"}
 		mw.requestCount.With(lvs...).Add(1)
-		mw.requestLatency.With(lvs...).Observe(time.Since(begin).Seconds())
+		mw.requestLatency.With(lvs...).Observe(toMicroSecond(time.Since(begin).Nanoseconds()))
 		mw.countResult.Observe(float64(n))
 	}(time.Now())
 
