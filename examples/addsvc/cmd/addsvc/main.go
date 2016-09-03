@@ -15,7 +15,6 @@ import (
 	lightstep "github.com/lightstep/lightstep-tracer-go"
 	stdopentracing "github.com/opentracing/opentracing-go"
 	zipkin "github.com/openzipkin/zipkin-go-opentracing"
-	stdprometheus "github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"sourcegraph.com/sourcegraph/appdash"
@@ -27,7 +26,7 @@ import (
 	thriftadd "github.com/go-kit/kit/examples/addsvc/thrift/gen-go/addsvc"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/metrics"
-	"github.com/go-kit/kit/metrics/prometheus"
+	"github.com/go-kit/kit/metrics/pcp"
 	"github.com/go-kit/kit/tracing/opentracing"
 )
 
@@ -60,25 +59,13 @@ func main() {
 	var ints, chars metrics.Counter
 	{
 		// Business level metrics.
-		ints = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
-			Namespace: "addsvc",
-			Name:      "integers_summed",
-			Help:      "Total count of integers summed via the Sum method.",
-		}, []string{})
-		chars = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
-			Namespace: "addsvc",
-			Name:      "characters_concatenated",
-			Help:      "Total count of characters concatenated via the Concat method.",
-		}, []string{})
+		ints = pcp.NewCounter("addsvc.integers_summed", "Total count of integers summed via the Sum method.")
+		chars = pcp.NewCounter("addsvc.characters_concatenated", "Total count of characters concatenated via the Concat method.")
 	}
 	var duration metrics.Histogram
 	{
 		// Transport level metrics.
-		duration = prometheus.NewSummaryFrom(stdprometheus.SummaryOpts{
-			Namespace: "addsvc",
-			Name:      "request_duration_ns",
-			Help:      "Request duration in nanoseconds.",
-		}, []string{"method", "success"})
+		duration = pcp.NewHistogram("addsvc.request_duration_ns", "Request duration in nanoseconds.")
 	}
 
 	// Tracing domain.
@@ -175,7 +162,6 @@ func main() {
 		m.Handle("/debug/pprof/profile", http.HandlerFunc(pprof.Profile))
 		m.Handle("/debug/pprof/symbol", http.HandlerFunc(pprof.Symbol))
 		m.Handle("/debug/pprof/trace", http.HandlerFunc(pprof.Trace))
-		m.Handle("/metrics", stdprometheus.Handler())
 
 		logger.Log("addr", *debugAddr)
 		errc <- http.ListenAndServe(*debugAddr, m)
@@ -253,4 +239,7 @@ func main() {
 
 	// Run!
 	logger.Log("exit", <-errc)
+
+	pcp.StartReporting("addsvc")
+	defer pcp.StopReporting()
 }
