@@ -4,11 +4,10 @@ import (
 	"net/http"
 	"os"
 
-	stdprometheus "github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/net/context"
 
 	"github.com/go-kit/kit/log"
-	kitprometheus "github.com/go-kit/kit/metrics/prometheus"
+	"github.com/go-kit/kit/metrics/pcp"
 	httptransport "github.com/go-kit/kit/transport/http"
 )
 
@@ -16,25 +15,10 @@ func main() {
 	ctx := context.Background()
 	logger := log.NewLogfmtLogger(os.Stderr)
 
-	fieldKeys := []string{"method", "error"}
-	requestCount := kitprometheus.NewCounterFrom(stdprometheus.CounterOpts{
-		Namespace: "my_group",
-		Subsystem: "string_service",
-		Name:      "request_count",
-		Help:      "Number of requests received.",
-	}, fieldKeys)
-	requestLatency := kitprometheus.NewSummaryFrom(stdprometheus.SummaryOpts{
-		Namespace: "my_group",
-		Subsystem: "string_service",
-		Name:      "request_latency_microseconds",
-		Help:      "Total duration of requests in microseconds.",
-	}, fieldKeys)
-	countResult := kitprometheus.NewSummaryFrom(stdprometheus.SummaryOpts{
-		Namespace: "my_group",
-		Subsystem: "string_service",
-		Name:      "count_result",
-		Help:      "The result of each count method.",
-	}, []string{}) // no fields here
+	// fieldKeys := []string{"method", "error"}
+	requestCount := pcp.NewCounter("request.count")
+	requestLatency := pcp.NewHistogram("request.latency")
+	countResult := pcp.NewHistogram("count.values")
 
 	var svc StringService
 	svc = stringService{}
@@ -57,7 +41,11 @@ func main() {
 
 	http.Handle("/uppercase", uppercaseHandler)
 	http.Handle("/count", countHandler)
-	http.Handle("/metrics", stdprometheus.Handler())
+	// http.Handle("/metrics", stdprometheus.Handler())
+
+	pcp.StartReporting("stringsvc")
+	defer pcp.StopReporting()
+
 	logger.Log("msg", "HTTP", "addr", ":8080")
 	logger.Log("err", http.ListenAndServe(":8080", nil))
 }
