@@ -14,11 +14,11 @@ import (
 func main() {
 	ctx := context.Background()
 	logger := log.NewLogfmtLogger(os.Stderr)
+	reporter := pcp.NewReporter("stringsvc")
 
-	// fieldKeys := []string{"method", "error"}
-	requestCount := pcp.NewCounter("request.count")
-	requestLatency := pcp.NewHistogram("request.latency")
-	countResult := pcp.NewHistogram("count.values")
+	requestCount := reporter.NewCounter("request.count")
+	requestLatency := reporter.NewHistogram("request.latency")
+	countResult := reporter.NewHistogram("count.values")
 
 	var svc StringService
 	svc = stringService{}
@@ -41,10 +41,9 @@ func main() {
 
 	http.Handle("/uppercase", uppercaseHandler)
 	http.Handle("/count", countHandler)
-	// http.Handle("/metrics", stdprometheus.Handler())
 
-	pcp.StartReporting("stringsvc")
-	defer pcp.StopReporting()
+	reporter.Start()
+	defer reporter.Stop()
 
 	logger.Log("msg", "HTTP", "addr", ":8080")
 	logger.Log("err", http.ListenAndServe(":8080", nil))
