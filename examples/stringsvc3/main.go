@@ -25,10 +25,11 @@ func main() {
 
 	ctx := context.Background()
 
-	// fieldKeys := []string{"method", "error"}
-	requestCount := pcp.NewCounter("request.count")
-	requestLatency := pcp.NewHistogram("request.latency")
-	countResult := pcp.NewHistogram("count.values")
+	reporter := pcp.NewReporter("stringsvc")
+
+	requestCount := reporter.NewCounter("request.count")
+	requestLatency := reporter.NewHistogram("request.latency")
+	countResult := reporter.NewHistogram("count.values")
 
 	var svc StringService
 	svc = stringService{}
@@ -52,8 +53,8 @@ func main() {
 	http.Handle("/uppercase", uppercaseHandler)
 	http.Handle("/count", countHandler)
 
-	pcp.StartReporting("stringsvc3")
-	defer pcp.StopReporting()
+	reporter.Start()
+	defer reporter.Stop()
 
 	logger.Log("msg", "HTTP", "addr", *listen)
 	logger.Log("err", http.ListenAndServe(*listen, nil))
