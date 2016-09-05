@@ -55,17 +55,19 @@ func main() {
 	logger.Log("msg", "hello")
 	defer logger.Log("msg", "goodbye")
 
+	reporter := pcp.NewReporter("addsvc")
+
 	// Metrics domain.
 	var ints, chars metrics.Counter
 	{
 		// Business level metrics.
-		ints = pcp.NewCounter("addsvc.integers_summed", "Total count of integers summed via the Sum method.")
-		chars = pcp.NewCounter("addsvc.characters_concatenated", "Total count of characters concatenated via the Concat method.")
+		ints = reporter.NewCounter("integers_summed", "Total count of integers summed via the Sum method.")
+		chars = reporter.NewCounter("characters_concatenated", "Total count of characters concatenated via the Concat method.")
 	}
 	var duration metrics.Histogram
 	{
 		// Transport level metrics.
-		duration = pcp.NewHistogram("addsvc.request_duration_ns", "Request duration in nanoseconds.")
+		duration = reporter.NewHistogram("request_duration_ns", "Request duration in nanoseconds.")
 	}
 
 	// Tracing domain.
@@ -240,6 +242,6 @@ func main() {
 	// Run!
 	logger.Log("exit", <-errc)
 
-	pcp.StartReporting("addsvc")
-	defer pcp.StopReporting()
+	reporter.Start()
+	defer reporter.Stop()
 }
