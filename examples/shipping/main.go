@@ -48,6 +48,8 @@ func main() {
 	logger = &serializedLogger{Logger: logger}
 	logger = log.NewContext(logger).With("ts", log.DefaultTimestampUTC)
 
+	reporter := pcp.NewReporter("shipping")
+
 	var (
 		cargos         = repository.NewCargo()
 		locations      = repository.NewLocation()
@@ -79,8 +81,8 @@ func main() {
 	bs = booking.NewService(cargos, locations, handlingEvents, rs)
 	bs = booking.NewLoggingService(log.NewContext(logger).With("component", "booking"), bs)
 	bs = booking.NewInstrumentingService(
-		pcp.NewCounter("api.booking_service.request_count", "Number of requests received."),
-		pcp.NewHistogram("api.booking_service.request_latency_microseconds", "Total duration of requests in microseconds."),
+		reporter.NewCounter("api.booking_service.request_count", "Number of requests received."),
+		reporter.NewHistogram("api.booking_service.request_latency_microseconds", "Total duration of requests in microseconds."),
 		bs,
 	)
 
@@ -88,8 +90,8 @@ func main() {
 	ts = tracking.NewService(cargos, handlingEvents)
 	ts = tracking.NewLoggingService(log.NewContext(logger).With("component", "tracking"), ts)
 	ts = tracking.NewInstrumentingService(
-		pcp.NewCounter("api.tracking_service.request_count", "Number of requests received."),
-		pcp.NewHistogram("api.tracking_service.request_latency_microseconds", "Total duration of requests in microseconds."),
+		reporter.NewCounter("api.tracking_service.request_count", "Number of requests received."),
+		reporter.NewHistogram("api.tracking_service.request_latency_microseconds", "Total duration of requests in microseconds."),
 		ts,
 	)
 
@@ -97,8 +99,8 @@ func main() {
 	hs = handling.NewService(handlingEvents, handlingEventFactory, handlingEventHandler)
 	hs = handling.NewLoggingService(log.NewContext(logger).With("component", "handling"), hs)
 	hs = handling.NewInstrumentingService(
-		pcp.NewCounter("api.handling_service.request_count", "Number of requests received."),
-		pcp.NewHistogram("api.handling_service.request_latency_microseconds", "Total duration of requests in microseconds."),
+		reporter.NewCounter("api.handling_service.request_count", "Number of requests received."),
+		reporter.NewHistogram("api.handling_service.request_latency_microseconds", "Total duration of requests in microseconds."),
 		hs,
 	)
 
@@ -112,8 +114,8 @@ func main() {
 
 	http.Handle("/", accessControl(mux))
 
-	pcp.StartReporting("shipping")
-	defer pcp.StopReporting()
+	reporter.Start()
+	defer reporter.Stop()
 
 	errs := make(chan error, 2)
 	go func() {
